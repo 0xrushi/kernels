@@ -6,6 +6,7 @@ import torch
 
 from models.llama import llama_example_chat_completion, llama_example_text_completion
 from benchmarking import Profiler, compare_benchmarks
+import kernels
 import pprint
 
 
@@ -66,11 +67,42 @@ def main(operation: str, profile=False, benchmark=False, **kwargs):
         print("\n==================================\n")
 
 
+def batchnorm_benchmark(batch_size=512, channels=2048, use_triton=True, suppress_prints=False):
+    """Benchmark batchnorm implementation"""
+    if not suppress_prints:
+        print(f"Running BatchNorm benchmark: {batch_size}x{channels}, use_triton={use_triton}")
+    
+    device = 'cuda'
+    eps = 1e-5
+    
+    # Create test data
+    input_tensor = torch.randn(batch_size, channels, device=device, dtype=torch.float32)
+    gamma = torch.ones(channels, device=device, dtype=torch.float32)
+    beta = torch.zeros(channels, device=device, dtype=torch.float32)
+    
+    if use_triton:
+        # Use custom Triton implementation
+        output = kernels.batchnorm(input_tensor, gamma, beta, eps)
+    else:
+        # Use PyTorch baseline
+        bn = torch.nn.BatchNorm1d(channels, eps=eps, affine=True, track_running_stats=False, device=device)
+        bn.weight.data = gamma
+        bn.bias.data = beta
+        bn.train()
+        with torch.no_grad():
+            output = bn(input_tensor)
+    
+    if not suppress_prints:
+        print(f"Output shape: {output.shape}, dtype: {output.dtype}")
+
+
 def runner(operation: str, kwargs):
     if operation == "llama_chat_completion":
         llama_example_chat_completion(**kwargs)
     elif operation == "llama_text_completion":
         llama_example_text_completion(**kwargs)
+    elif operation == "batchnorm_benchmark":
+        batchnorm_benchmark(**kwargs)
     else:
         raise ValueError(f"Unknown operation: {operation}")
 

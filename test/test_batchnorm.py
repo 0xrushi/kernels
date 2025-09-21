@@ -1,6 +1,7 @@
 import pytest
 import torch
 import kernels
+from kernels import batchnorm
 
 def create_test_data(batch_size: int, channels: int, device: str = 'cuda'):
     input_tensor = torch.randn(batch_size, channels, device=device, dtype=torch.float32)
@@ -19,7 +20,7 @@ def test_batchnorm_correctness(batch_size, channels):
     eps = 1e-5
     input_tensor, gamma, beta = create_test_data(batch_size, channels)
     
-    output_custom = kernels.batchnorm(input_tensor, gamma, beta, eps)
+    output_custom = batchnorm(input_tensor, gamma, beta, eps)
 
     bn = torch.nn.BatchNorm1d(channels, eps=eps, affine=True, track_running_stats=False, device=input_tensor.device)
     bn.weight.data = gamma
@@ -42,7 +43,7 @@ def test_batchnorm_dtypes(dtype):
     gamma = torch.ones(channels, device='cuda', dtype=dtype)
     beta = torch.zeros(channels, device='cuda', dtype=dtype)
     
-    output = kernels.batchnorm(input_tensor, gamma, beta, eps)
+    output = batchnorm(input_tensor, gamma, beta, eps)
     assert output.dtype == dtype
     assert output.shape == input_tensor.shape
 
@@ -74,7 +75,7 @@ def test_fused_vs_two_pass(use_small_problem):
     eps = 1e-5
     input_tensor, gamma, beta = create_test_data(batch_size, channels)
     
-    output = kernels.batchnorm(input_tensor, gamma, beta, eps)
+    output = batchnorm(input_tensor, gamma, beta, eps)
     
     bn = torch.nn.BatchNorm1d(channels, eps=eps, affine=True, track_running_stats=False, device=input_tensor.device)
     bn.weight.data = gamma

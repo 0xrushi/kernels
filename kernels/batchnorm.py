@@ -1,6 +1,7 @@
 import torch
 import triton
 import triton.language as tl
+from benchmarking import Profiler
 
 @triton.autotune(
     configs=[
@@ -163,6 +164,7 @@ def _batchnorm(input: torch.Tensor, gamma: torch.Tensor, beta: torch.Tensor,
                          input.stride(0), input.stride(1),
                          output.stride(0), output.stride(1))
 
+@Profiler.profiling_decorator("batchnorm")
 def batchnorm(input: torch.Tensor, gamma: torch.Tensor, beta: torch.Tensor, eps: float = 1e-5):
     N, C = input.shape
     output = torch.empty_like(input)
