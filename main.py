@@ -32,8 +32,8 @@ def main(operation: str, profile=False, benchmark=False, **kwargs):
         p = Profiler(profile, benchmark)
         torch.cuda.empty_cache()
         runner(operation, kwargs)
-        benchmarks["triton"] = Profiler.get_benchmark_vals()
-        profiles["triton"] = Profiler.get_profiling_data()
+        benchmarks["non_triton"] = Profiler.get_benchmark_vals()
+        profiles["non_triton"] = Profiler.get_profiling_data()
         Profiler.reset()
         p = Profiler(profile, benchmark)
 
@@ -43,8 +43,8 @@ def main(operation: str, profile=False, benchmark=False, **kwargs):
         p = Profiler(profile, benchmark)
         torch.cuda.empty_cache()
         runner(operation, kwargs)
-        benchmarks["non_triton"] = Profiler.get_benchmark_vals()
-        profiles["non_triton"] = Profiler.get_profiling_data()
+        benchmarks["triton"] = Profiler.get_benchmark_vals()
+        profiles["triton"] = Profiler.get_profiling_data()
     elif profile:
         runner(operation, kwargs)
         data = Profiler.get_profiling_data()
@@ -67,6 +67,7 @@ def main(operation: str, profile=False, benchmark=False, **kwargs):
         print("\n==================================\n")
 
 
+@Profiler.profiling_decorator("batchnorm_benchmark")
 def batchnorm_benchmark(batch_size=512, channels=2048, use_triton=True, suppress_prints=False):
     """Benchmark batchnorm implementation"""
     if not suppress_prints:
@@ -94,6 +95,8 @@ def batchnorm_benchmark(batch_size=512, channels=2048, use_triton=True, suppress
     
     if not suppress_prints:
         print(f"Output shape: {output.shape}, dtype: {output.dtype}")
+
+    return output
 
 
 def runner(operation: str, kwargs):

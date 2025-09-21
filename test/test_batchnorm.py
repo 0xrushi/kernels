@@ -1,7 +1,7 @@
 import pytest
 import torch
 import kernels
-from kernels import batchnorm
+from kernels import batchnorm, _batchnorm
 
 def create_test_data(batch_size: int, channels: int, device: str = 'cuda'):
     input_tensor = torch.randn(batch_size, channels, device=device, dtype=torch.float32)
@@ -54,7 +54,7 @@ def test_batchnorm_backward_compatibility():
     
     N, C = input_tensor.shape
     output = torch.empty_like(input_tensor)
-    kernels.batchnorm._batchnorm(input_tensor, gamma, beta, output, N, C, eps)
+    _batchnorm(input_tensor, gamma, beta, output, N, C, eps)
     
     bn = torch.nn.BatchNorm1d(C, eps=eps, affine=True, track_running_stats=False, device=input_tensor.device)
     bn.weight.data = gamma
